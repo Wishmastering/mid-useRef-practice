@@ -43,11 +43,13 @@ c. Si es menor a 3 caracteres
 
 ✅ Haz que las peliculas se muestren en un grid responsive.
 
-- Realiza el fetch
+✅ Realiza el fetch
+
+✅ Crea un estado loading en useMovies y renderizar 'loading...' si es true, o el componente en cuestion si es 'false'
 
 Primera iteracion:
 
-- Evitar que se haga la misma busqueda dos veces seguidas
+✅ Evitar que se haga la misma busqueda dos veces seguidas
 
 - crear un sort por orden alfabetico
 

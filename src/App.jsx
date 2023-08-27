@@ -1,10 +1,31 @@
 import "./App.css";
-import json from "./mock-response/good-response.json";
-import no_json from "./mock-response/bad-response.json";
 import { useEffect, useState, useRef } from "react";
 
-function useMovies() {
-  const movies = json.Search;
+function useMovies({ search, sort }) {
+  const [movieList, setMovieList] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const movies = movieList?.Search;
+  const searchRef = useRef(search);
+
+  const getMovies = async () => {
+    if (search === searchRef.current) return;
+
+    try {
+      setLoading(true);
+      searchRef.current = search;
+      const res = await fetch(
+        `http://www.omdbapi.com/?apikey=e1f20ea6&s=${search}`
+      );
+
+      const data = await res.json();
+
+      setMovieList(data);
+    } catch (e) {
+      throw new Error("Error while searching your movies");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const mappedMovies = movies?.map((movie) => ({
     id: movie.imdbID,
@@ -12,17 +33,22 @@ function useMovies() {
     year: movie.Year,
     poster: movie.Poster,
   }));
-  return { movies: mappedMovies };
+
+  const sortedMovies = sort
+    ? [...mappedMovies].sort((a, b) => b.title.localeCompare(a.title))
+    : mappedMovies;
+
+  return { movies: sortedMovies, getMovies, movieList, loading };
 }
 
 function useSearch() {
   const [error, setError] = useState(null);
   const [search, setSearch] = useState("");
-  const [searchRef, setSearchRef] = useState(false);
+  const searchRef = useRef(true);
 
   useEffect(() => {
-    if (searchRef) {
-      (searchRef === search) === "";
+    if (searchRef.current) {
+      searchRef.current = search === "";
       return;
     }
 
@@ -48,11 +74,21 @@ function useSearch() {
 }
 
 export default function App() {
-  const { movies } = useMovies();
+  const [sort, setSort] = useState(false);
   const { search, setSearch, error } = useSearch();
+  const { movies, getMovies, movieList, loading } = useMovies({ search, sort });
 
   const handleChange = (e) => {
     setSearch(e.target.value);
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    getMovies();
+  };
+
+  const handleSort = () => {
+    setSort(!sort);
   };
 
   return (
@@ -66,13 +102,14 @@ export default function App() {
             type="text"
             placeholder="Avengers, Star Wars, LOTR"
           />
-          <button> Buscar</button>
+          <input type="checkbox" onClick={handleSort} />
+          <button onClick={handleSubmit}> Buscar</button>
         </form>
         {error && <p style={{ color: "red" }}>{error}</p>}
       </header>
 
       <main>
-        <Movies movies={movies} />
+        {loading ? <p>Loading your Movies...</p> : <Movies movies={movies} />}
       </main>
     </div>
   );
